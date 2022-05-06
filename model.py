@@ -1,8 +1,22 @@
 import math
+from dataclasses import dataclass
+
 import numpy as np
 import random
-from functools import wraps
+from functools import wraps, total_ordering
 from scipy.optimize import minimize_scalar
+
+
+@dataclass
+@total_ordering
+class Event:
+    node: int
+    time: float
+    action: str
+
+    def __le__(self, other):
+        return self.time < other.time
+
 
 def logn(x, s, m, k):
     if x == 0:
@@ -14,6 +28,7 @@ def logn(x, s, m, k):
 
 vlogn = np.vectorize(logn, otypes=[float])
 
+
 def get_inf_times_mi(t_max, beta, inf_function, max_inf):
     inf_times = []
     t = 0
@@ -23,7 +38,7 @@ def get_inf_times_mi(t_max, beta, inf_function, max_inf):
         if t < t_max:
             rate = inf_function(t)
             s = random.uniform(0, 1)
-            if s < (rate / max_inf): # todo verify the max_inf, write down the reference
+            if s < (rate / max_inf):  # todo verify the max_inf, write down the reference
                 inf_times.append(t)
 
     return inf_times
