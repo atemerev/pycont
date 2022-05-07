@@ -24,18 +24,21 @@ def select_contact(node_list):
 
 def infect(node_list, queue, event, beta, inf_function, max_inf, inf_time_max, suscept_function, time_max, recovery_delay):
     # first, let's see if we are unlucky to be infected by this event, per our susceptibility
-    #node = node_list.iloc[[event.node]]
-    rec_time = event.time if node_list.at[event.node, 'rec_time'] == -1 else node_list.at[event.node, 'rec_time']
+    # node = node_list.iloc[[event.node]]
+    rec_time = event.time if node_list.at[event.node, 'event_type'] == 'init' else node_list.at[event.node, 'rec_time']
     delta_t = event.time - rec_time
-    susceptibility = 1.0 if node_list.at[event.node, 'rec_time'] == -1 else suscept_function(delta_t)
-    susceptibility = 0.0 if delta_t < 0 else susceptibility
+    susceptibility = 1.0 if node_list.at[event.node, 'event_type'] == 'init' else suscept_function(delta_t)
+    # assuming that people are not susceptible until recovered
+    if node_list.at[event.node, 'event_type'] == 'infected' and delta_t < recovery_delay:
+        susceptibility = 0.0
     random_uniform = random.uniform(0, 1)
     if random_uniform > susceptibility:
         # infection didn't pass through (we do not update rec_time then)
         return
     # otherwise, we are infected. Let's generate infection events and add them to the queue
     # susceptibility is calculated from the recovery time
-    node_list.at[event.node, 'rec_time'] = event.time + recovery_delay
+    node_list.at[event.node, 'rec_time'] = event.time
+    node_list.at[event.node, 'event_type'] = 'infected'
     inf_times = model.get_inf_times_mi(inf_time_max, beta, inf_function, max_inf)
     for inf_time in inf_times:
         # creating infection event, adding it to the queue
@@ -115,7 +118,9 @@ def main():
 
     rows_list = []
     for i in range(0, people_count):
-        rows_list.append({'rec_time': -1, 'susceptibility': 1.0})
+        # event types: 'init', 'infected', 'vaccinated'
+        # rec_time: last event timestamp
+        rows_list.append({'rec_time': -1, 'susceptibility': 1.0, 'event_type': 'init'})
     nodes = pd.DataFrame(rows_list)
 
     result = simulate(nodes, initial_infected, t_max, beta, inf_function, susc_function, resolution, max_disease_length, recovery_delay, max_inf)
