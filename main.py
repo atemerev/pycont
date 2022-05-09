@@ -87,7 +87,7 @@ def simulate(nodes_frame, initial_infected, t_max, beta, inf_function, susc_func
 
 def main():
     print("Simulation started")
-    people_count = 500
+    people_count = 5000
     resolution = 1000
     max_disease_length = 20
     recovery_delay = 7
@@ -96,11 +96,11 @@ def main():
     scale = 0.2577
     mean = 1.4915
     k = 0.293
-    # decay_popt = [-9.77555285e-03, 1.03320181e+00, 1.95573648e+02]
-    decay_popt = [-1e-01, 0.5, 10]
+    decay_popt = [-9.77555285e-03, 1.03320181e+00, 1.95573648e+02]
+    #decay_popt = [-1e-01, 0.5, 10]
 
     initial_infected = 2
-    t_max = 365  # days
+    t_max = 365 * 5  # days
     beta = 1.0
 
     def inf_function(t):
@@ -128,7 +128,7 @@ def main():
 
     plt.figure()
     plt.plot(result['time'], result['cases'])
-    plt.savefig('cases_plot.png')
+    plt.savefig('cases_plot3.png')
 
     # inf_nums = []
     # events = []
