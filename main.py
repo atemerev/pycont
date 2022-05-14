@@ -1,20 +1,13 @@
-import random
-import numpy as np
-import scipy.stats as stats
-from matplotlib import pyplot as plt
 import math
-import scipy.integrate as integrate
-from scipy.integrate import odeint
-import datetime as dt
+import random
 from queue import PriorityQueue
-from dataclasses import dataclass
-from functools import total_ordering
+
+import numpy as np
 import pandas as pd
-from queue import PriorityQueue
-from scipy.optimize import curve_fit
+from matplotlib import pyplot as plt
 
 import model
-from model import logn, vlogn
+from model import logn
 
 
 def select_contact(node_list):
@@ -86,6 +79,7 @@ def simulate(nodes_frame, initial_infected, t_max, beta, inf_function, susc_func
 
 
 def main():
+    plt.rcParams.update({'font.size': 20})
     print("Simulation started")
     people_count = 5000
     resolution = 1000
@@ -100,7 +94,7 @@ def main():
     #decay_popt = [-1e-01, 0.5, 10]
 
     initial_infected = 2
-    t_max = 365 * 5  # days
+    t_max = 365 * 2 # days
     beta = 1.0
 
     def inf_function(t):
@@ -126,8 +120,9 @@ def main():
     result = simulate(nodes, initial_infected, t_max, beta, inf_function, susc_function, resolution, max_disease_length, recovery_delay, max_inf)
     print(result)
 
-    plt.figure()
+    plt.figure(figsize=(20, 12))
     plt.plot(result['time'], result['cases'])
+    plt.grid()
     plt.savefig('cases_plot3.png')
 
     # inf_nums = []
