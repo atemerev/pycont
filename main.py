@@ -41,6 +41,9 @@ def infect(node_list, queue, event, beta, inf_function, max_inf, inf_time_max, s
         target = select_contact(node_list)
         infection_event = model.Event(node=target, time=t, action='infect')
         queue.put(infection_event)
+        # creating the "removal" event, to use in statistics (and deaths estimations)
+        remove_event = model.Event(node=target, time=t + inf_time_max, action='remove')
+        queue.put(remove_event)
 
 
 def simulate(nodes_frame, initial_infected, t_max, beta, inf_function, susc_function, resolution, max_disease_length, recovery_delay, max_inf):
@@ -59,24 +62,30 @@ def simulate(nodes_frame, initial_infected, t_max, beta, inf_function, susc_func
         event = model.Event(node=u, time=0, action='infect')
         queue.put(event)
 
-    result = [{'time': 0, 'cases': 0}]
+    result = [{'time': 0, 'cases': 0, 'net_dose': 0}]
     last_day = 0
     cases_by_day = {}
+    cures_by_day = {}
 
     while not queue.empty():
         event = queue.get()
+        day = int(event.time)
         if event.time >= t_max:
             return pd.DataFrame(result)
         if event.action == 'infect':
-            day = int(event.time)
             cases_by_day[day] = cases_by_day.get(day, 0) + 1
             infect(nodes_frame, queue, event, beta, inf_function, max_inf, max_disease_length, susc_function, t_max, recovery_delay)
-            if day > last_day:
-                result.append({'time': last_day + 1, 'cases': cases_by_day[last_day]})
-                last_day = day
+
+        if event.action == 'remove':
+            cures_by_day[day] = cures_by_day.get(day, 0) + 1
+
+        if day > last_day:
+            cases_by_day[last_day] = cases_by_day.get(last_day, 0)
+            cures_by_day[last_day] = cures_by_day.get(last_day, 0)
+            result.append({'time': last_day + 1, 'cases': cases_by_day[last_day], 'cures': cures_by_day[last_day]})
+            last_day = day
 
     return pd.DataFrame(result)
-
 
 def main():
     plt.rcParams.update({'font.size': 20})
