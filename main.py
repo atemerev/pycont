@@ -62,7 +62,7 @@ def simulate(nodes_frame, initial_infected, t_max, beta, inf_function, susc_func
         event = model.Event(node=u, time=0, action='infect')
         queue.put(event)
 
-    result = [{'time': 0, 'cases': 0, 'net_dose': 0}]
+    result = [{'time': 0, 'cases': 0, 'cures': 0}]
     last_day = 0
     cases_by_day = {}
     cures_by_day = {}
@@ -133,6 +133,12 @@ def main():
     plt.plot(result['time'], result['cases'])
     plt.grid()
     plt.savefig('cases_plot3.png')
+
+    plt.figure(figsize=(20, 12))
+    plt.plot(result['cases'] - result['cures'])
+    plt.grid()
+    plt.savefig('dose_plot.png')
+
 
     # inf_nums = []
     # events = []
