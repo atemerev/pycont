@@ -59,21 +59,37 @@ def simulate(nodes_frame, initial_infected, t_max, beta, inf_function, susc_func
         event = model.Event(node=u, time=0, action='infect')
         queue.put(event)
 
-    result = [{'time': 0, 'cases': 0}]
+    result = [{'time': 0, 'cases': 0, 'net_dose': 1}]
     last_day = 0
     cases_by_day = {}
+    total_cases = initial_infected
+    prev_total = initial_infected
+    recoveries_by_day = {}
 
     while not queue.empty():
         event = queue.get()
         if event.time >= t_max:
             return pd.DataFrame(result)
+
+        day = int(event.time)
         if event.action == 'infect':
-            day = int(event.time)
+            total_cases += 1
             cases_by_day[day] = cases_by_day.get(day, 0) + 1
             infect(nodes_frame, queue, event, beta, inf_function, max_inf, max_disease_length, susc_function, t_max, recovery_delay)
-            if day > last_day:
-                result.append({'time': last_day + 1, 'cases': cases_by_day[last_day]})
-                last_day = day
+            recovery_event = model.Event(node=event.node, time=event.time + max_disease_length, action='recover')
+            queue.put(recovery_event)
+        if event.action == 'recover':
+            recoveries_by_day[day] = recoveries_by_day.get(day, 0) + 1
+
+        if day > last_day:
+            d_total = float(total_cases) / prev_total
+            prev_total = total_cases
+            d_cases = cases_by_day.get(last_day, 0)
+
+            # d_recoveries = recoveries_by_day.get(last_day, 0)
+            # net_dose = d_cases - d_recoveries
+            result.append({'time': last_day + 1, 'cases': cases_by_day.get(last_day, 0), 'net_dose': d_total})
+            last_day = day
 
     return pd.DataFrame(result)
 
@@ -121,24 +137,35 @@ def main():
     print(result)
 
     plt.figure(figsize=(20, 12))
+    plt.title("Daily new infections (simulation, time-dependent infectiousness and immunity)")
+    plt.xlabel("Time (days)")
+    plt.ylabel("Daily new infections")
     plt.plot(result['time'], result['cases'])
     plt.grid()
-    plt.savefig('cases_plot3.png')
+    plt.savefig('cases_plot5.png')
 
-    # inf_nums = []
-    # events = []
-    #
-    # for i in range(0, 10000):
-    #     inf_times = model.get_inf_times_mi(20, 1.0, inf_function, max_inf)
-    #     inf_nums.append(len(inf_times))
-    #     events.extend(inf_times)
-    #
-    # plt.figure()
-    # plt.hist(events, bins=100, range=[0, max_disease_length])
-    # plt.savefig('inf_times.png')
-    # plt.figure()
-    # plt.hist(inf_nums, bins=100, range=[0, max_disease_length])
-    # plt.savefig('inf_num.png')
+    plt.figure(figsize=(20, 12))
+    plt.title("Net dose (daily infections - daily recoveries)")
+    plt.xlabel("Time (days)")
+    plt.ylabel("Net dose")
+    plt.plot(result['time'], result['net_dose'])
+    plt.grid()
+    plt.savefig('net_dose_plot.png')
+
+    inf_nums = []
+    events = []
+
+    for i in range(0, 10000):
+        inf_times = model.get_inf_times_mi(20, 1.0, inf_function, max_inf)
+        inf_nums.append(len(inf_times))
+        events.extend(inf_times)
+
+    plt.figure()
+    plt.hist(events, bins=100, range=[0, max_disease_length])
+    plt.savefig('inf_times.png')
+    plt.figure()
+    plt.hist(inf_nums, bins=100, range=[0, max_disease_length])
+    plt.savefig('inf_num.png')
 
 
 main()
