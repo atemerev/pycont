@@ -41,6 +41,9 @@ def infect(node_list, queue, event, beta, inf_function, max_inf, inf_time_max, s
         target = select_contact(node_list)
         infection_event = model.Event(node=target, time=t, action='infect')
         queue.put(infection_event)
+        # creating the "removal" event, to use in statistics (and deaths estimations)
+        remove_event = model.Event(node=target, time=t + inf_time_max, action='remove')
+        queue.put(remove_event)
 
 
 def simulate(nodes_frame, initial_infected, t_max, beta, inf_function, susc_function, resolution, max_disease_length, recovery_delay, max_inf):
@@ -66,8 +69,10 @@ def simulate(nodes_frame, initial_infected, t_max, beta, inf_function, susc_func
     prev_total = initial_infected
     recoveries_by_day = {}
 
+
     while not queue.empty():
         event = queue.get()
+        day = int(event.time)
         if event.time >= t_max:
             return pd.DataFrame(result)
 
@@ -92,7 +97,6 @@ def simulate(nodes_frame, initial_infected, t_max, beta, inf_function, susc_func
             last_day = day
 
     return pd.DataFrame(result)
-
 
 def main():
     plt.rcParams.update({'font.size': 20})
